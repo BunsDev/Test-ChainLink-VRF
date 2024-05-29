@@ -105,11 +105,57 @@ contract SubscriptionConsumer is VRFConsumerBaseV2Plus {
         emit RequestFulfilled(_requestId, _randomWords);
     }
 
+    function uintToString(uint256 v) internal pure returns (string memory str) {
+        if (v == 0) {
+            return "0";
+        }
+        uint256 maxLength = 78; // 2^256 is a 78-digit number
+        bytes memory reversed = new bytes(maxLength);
+        uint256 i = 0;
+        while (v != 0) {
+            uint8 remainder = uint8(v % 10);
+            v = v / 10;
+            reversed[i++] = bytes1(48 + remainder);
+        }
+        bytes memory s = new bytes(i);
+        for (uint256 j = 0; j < i; j++) {
+            s[j] = reversed[i - 1 - j];
+        }
+        str = string(s);
+    }
+
+    function getFirstCharacter(
+        string memory str
+    ) internal pure returns (string memory) {
+        bytes memory strBytes = bytes(str);
+        require(strBytes.length > 0, "string is empty");
+        bytes memory result = new bytes(1);
+        result[0] = strBytes[0];
+        return string(result);
+    }
+
     function getRequestStatus(
-        uint256 _requestId
-    ) external view returns (bool fulfilled, uint256[] memory randomWords) {
-        require(s_requests[_requestId].exists, "request not found");
-        RequestStatus memory request = s_requests[_requestId];
-        return (request.fulfilled, request.randomWords);
+        string memory _requestId
+    ) external view returns (string memory firstRandomWord) {
+        // Convert the string _requestId to uint256
+        uint256 requestId = stringToUint(_requestId);
+
+        require(s_requests[requestId].exists, "request not found");
+        RequestStatus memory request = s_requests[requestId];
+        require(request.randomWords.length > 0, "randomWords array is empty");
+        string memory fullString = uintToString(request.randomWords[0]);
+        return getFirstCharacter(fullString);
+    }
+
+    // Helper function to convert string to uint256
+    function stringToUint(string memory s) internal pure returns (uint256) {
+        bytes memory b = bytes(s);
+        uint256 result = 0;
+        for (uint i = 0; i < b.length; i++) {
+            uint256 digit = uint256(uint8(b[i])) - 48;
+            require(digit <= 9, "Invalid character in string");
+            result = result * 10 + digit;
+        }
+        return result;
     }
 }
