@@ -68,7 +68,7 @@ contract SubscriptionConsumer is VRFConsumerBaseV2Plus {
     // `false` to pay in LINK
     function requestRandomWords(
         bool enableNativePayment
-    ) external onlyOwner returns (uint256 requestId) {
+    ) external returns (uint256 requestId) {
         // Will revert if subscription is not set and funded.
         requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
